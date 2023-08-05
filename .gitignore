@@ -1,0 +1,9 @@
+node_modules
+
+# Android
+build/
+.idea
+.gradle
+local.properties
+*.iml
+*.hprof
