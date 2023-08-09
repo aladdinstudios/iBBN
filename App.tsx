@@ -5,9 +5,10 @@
  * @format
  */
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { PropsWithChildren } from "react";
 import {
+  BackHandler,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -16,7 +17,7 @@ import {
   useColorScheme,
   View,
 } from "react-native";
-import { WebView } from "react-native-webview";
+import { WebView, WebViewNavigation } from "react-native-webview";
 
 import {
   Colors,
@@ -60,6 +61,37 @@ function Section({ children, title }: SectionProps): JSX.Element {
 
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === "dark";
+  const webViewRef = useRef(null);
+  const canGoBackRef = useRef(false);
+
+  const setupState = (event: WebViewNavigation) => {
+    canGoBackRef.current = event?.canGoBack;
+  };
+  const handleBackButtonPress = () => {
+    try {
+      //@ts-ignore
+
+      if (canGoBackRef.current) {
+        //@ts-ignore
+        webViewRef.current?.goBack();
+        console.log("Running");
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      console.log("[handleBackButtonPress] Error : ", err.message);
+      return false;
+    }
+  };
+  useEffect(() => {
+    BackHandler.addEventListener("hardwareBackPress", handleBackButtonPress);
+    return () => {
+      BackHandler.removeEventListener(
+        "hardwareBackPress",
+        handleBackButtonPress
+      );
+    };
+  }, [canGoBackRef.current]);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -103,7 +135,11 @@ function App(): JSX.Element {
     //   </ScrollView>
     // </SafeAreaView>
     <SafeAreaView style={{ flex: 1 }}>
-      <WebView source={{ uri: "https://ibbn.network/" }} />
+      <WebView
+        onNavigationStateChange={(e) => setupState(e)}
+        ref={webViewRef}
+        source={{ uri: "https://ibbn.network/" }}
+      />
     </SafeAreaView>
   );
 }
